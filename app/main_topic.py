@@ -2,11 +2,18 @@ from fastapi import FastAPI
 import aio_pika
 import json
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
+RABBIT_URL = os.getenv("RABBIT_URL")
+if not RABBIT_URL:
+    raise RuntimeError("RABBIT_URL is not set. Export it or add it to .env.")
 
 app = FastAPI()
 
 EXCHANGE_NAME = "events_topic"
-RABBIT_URL = os.getenv("RABBIT_URL")
+
+
 
 async def get_exchange():
     """
@@ -18,6 +25,7 @@ async def get_exchange():
     ex = await ch.declare_exchange(EXCHANGE_NAME, aio_pika.ExchangeType.TOPIC)
     return conn, ch, ex
 
+
 @app.post("/order/create")
 async def order_created(order: dict):
     """
@@ -28,6 +36,7 @@ async def order_created(order: dict):
     await ex.publish(msg, routing_key="order.created")
     await conn.close()
     return {"event": "order.created", "order": order}
+
 
 @app.post("/payment/success")
 async def payment_success(payment: dict):
